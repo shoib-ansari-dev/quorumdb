@@ -1,0 +1,16 @@
+[workspace]
+members = [
+    "quorumdb-core",
+    "quorumdb-server",
+    "quorumdb-client",
+    "quorumdb-proto",
+    "quorumdb-bench"
+]
+resolver = "2"
+
+[package]
+name = "quorumdb"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
