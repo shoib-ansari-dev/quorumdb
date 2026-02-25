@@ -26,7 +26,7 @@ pub async fn handle_client(socket: TcpStream, engine: Arc<KvStore>) {
         }
 
         let response = match parse(&line) {
-            Ok(cmd) => execute(cmd, &engine),
+            Ok(cmd) => execute(cmd, &engine).await,
             Err(err) => format!("ERROR: {}\n", err),
         };
 
@@ -36,11 +36,13 @@ pub async fn handle_client(socket: TcpStream, engine: Arc<KvStore>) {
     }
 }
 
-fn execute(cmd: Command, engine: &KvStore) -> String {
+async fn execute(cmd: Command, engine: &KvStore) -> String {
     match cmd {
         Command::Set { key, value } => {
-            engine.set(key, value);
-            "OK\n".to_string()
+            match engine.set(key, value).await {
+                Ok(_) => "OK\n".to_string(),
+                Err(e) => format!("ERROR: {}\n", e),
+            }
         }
         Command::Get { key } => {
             match engine.get(&key) {

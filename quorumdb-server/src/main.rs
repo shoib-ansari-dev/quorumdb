@@ -9,6 +9,10 @@ mod handler;
 async fn main() {
     let engine = Arc::new(KvStore::new());
 
+    if let Err(e)= engine.init_wal("quorum.wal").await {
+        eprintln!("Failed to initialize WAL: {}", e);
+        std::process::exit(1);
+    }
     println!("Server running on 127.0.0.1:7000");
 
     server::run("127.0.0.1:7000", engine).await;
