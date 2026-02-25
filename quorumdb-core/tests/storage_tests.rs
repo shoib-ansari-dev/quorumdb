@@ -5,10 +5,10 @@ mod tests {
     use std::sync::Arc;
     use super::*;
 
-    #[test]
-    fn test_set_and_get(){
+    #[tokio::test]
+    async fn test_set_and_get(){
         let engine= StorageEngine::<String, String>::new();
-        engine.set("key1".to_string(), "value1".to_string());
+        engine.set("key1".to_string(), "value1".to_string()).await.expect("Error");
         assert_eq!(engine.get(&"key1".to_string()), Ok(Some("value1".to_string())));
     }
     #[test]
@@ -16,28 +16,31 @@ mod tests {
         let engine= StorageEngine::<String, String>::new();
         assert_eq!(engine.get(&"non_existing".to_string()), Ok(None));
     }
-    #[test]
-    fn test_delete(){
+    #[tokio::test]
+    async fn test_delete(){
         let engine= StorageEngine::<String, String>::new();
-        engine.set("key1".to_string(), "value1".to_string());
+        engine.set("key1".to_string(), "value1".to_string()).await.expect("Error");
         assert_eq!(engine.delete(&"key1".to_string()), Ok(Some("value1".to_string())));
         assert_eq!(engine.get(&"key1".to_string()), Ok(None));
     }
-    #[test]
-    fn test_thread_safety(){
+    #[tokio::test]
+    async fn test_thread_safety(){
         let engine= Arc::new(StorageEngine::<String, String>::new());
-        let handles: Vec<_> = (0..10).map(|i| {
+        let mut handles = vec![];
+
+        for i in 0..10 {
             let engine_clone = engine.clone();
-            std::thread::spawn(move || {
+            let handle = tokio::spawn(async move {
                 let key = format!("key{}", i);
                 let value = format!("value{}", i);
-                engine_clone.set(key.clone(), value.clone());
+                engine_clone.set(key.clone(), value.clone()).await.expect("Error");
                 assert_eq!(engine_clone.get(&key), Ok(Some(value)));
-            })
-        }).collect();
+            });
+            handles.push(handle);
+        }
 
         for handle in handles {
-            handle.join().unwrap();
+            handle.await.unwrap();
         }
         assert_eq!(engine.len().unwrap_or(0), 10);
     }
