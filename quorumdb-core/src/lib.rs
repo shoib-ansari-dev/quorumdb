@@ -2,6 +2,7 @@ mod storage;
 pub mod raft;
 
 pub use storage::engine::StorageEngine;
+pub use storage::wal::{WriteAheadLog, LogEntry as WalLogEntry};
 
 // Type alias for the concrete implementation (String key-value store)
 pub type KvStore = StorageEngine<String, String>;
