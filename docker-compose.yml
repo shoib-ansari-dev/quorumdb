@@ -1,0 +1,73 @@
+services:
+  # Node 1 - Will likely become leader
+  node1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: quorumdb-node1
+    environment:
+      NODE_ID: node1
+      BIND_ADDR: 0.0.0.0
+      CLIENT_PORT: 7000
+      RAFT_PORT: 7001
+      PEERS: "node2:node2:7001,node3:node3:7001"
+      RUST_LOG: info
+    ports:
+      - "7000:7000"  # Client port
+      - "7001:7001"  # Raft peer port
+    networks:
+      - quorum-cluster
+    depends_on:
+      - node2
+      - node3
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7000/health || true"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Node 2
+  node2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: quorumdb-node2
+    environment:
+      NODE_ID: node2
+      BIND_ADDR: 0.0.0.0
+      CLIENT_PORT: 7000
+      RAFT_PORT: 7001
+      PEERS: "node1:node1:7001,node3:node3:7001"
+      RUST_LOG: info
+    ports:
+      - "7010:7000"  # Client port
+      - "7011:7001"  # Raft peer port
+    networks:
+      - quorum-cluster
+    restart: unless-stopped
+
+  # Node 3
+  node3:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: quorumdb-node3
+    environment:
+      NODE_ID: node3
+      BIND_ADDR: 0.0.0.0
+      CLIENT_PORT: 7000
+      RAFT_PORT: 7001
+      PEERS: "node1:node1:7001,node2:node2:7001"
+      RUST_LOG: info
+    ports:
+      - "7020:7000"  # Client port
+      - "7021:7001"  # Raft peer port
+    networks:
+      - quorum-cluster
+    restart: unless-stopped
+
+networks:
+  quorum-cluster:
+    driver: bridge
+
